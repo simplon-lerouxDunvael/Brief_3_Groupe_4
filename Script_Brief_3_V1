@@ -1,1 +1,2 @@
-
+az group create --name B3G4 --location japaneast
+az vm create -n vmjenkins --resource-group B3G4 --image Debian:debian-10:10:latest --generate-ssh-keys
