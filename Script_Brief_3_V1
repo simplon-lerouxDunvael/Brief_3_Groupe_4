@@ -10,3 +10,23 @@ az group delete --name B3G4 --no-wait --yes
 
 az network vnet create --resource-group B3G4RG --name MyVnet --address-prefix 10.0.0.0/16 --subnet-name AzureBastionSubnet --subnet-prefix 10.0.0.0/24 --location japaneast
 az network public-ip create --resource-group B3G4RG --name MyIp --sku Standard --location japaneast
+
+
+az vm create --admin-username azurenicolas
+az vm create --admin-username azuredavid
+az vm create --admin-username azuredunvael
+
+Disque : https://docs.microsoft.com/fr-fr/azure/virtual-machines/linux/add-disk
+
+- Disque à ajouter : az vm disk attach -g B3G4RG --vm-name vmjenkins --name UserDataDisk --new --size-gb 50
+
+- Répertorier les disques : lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
+
+- Formater : sudo parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
+sudo mkfs.xfs /dev/sdc1
+sudo partprobe /dev/sdc1
+
+- Monter le disque : sudo mkdir /datadrive
+- Monter le système de fichiers : sudo mount /dev/sdc1 /datadrive
+- Rendre le montage permanent : sudo blkid
+- ... à continuer
