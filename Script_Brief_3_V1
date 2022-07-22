@@ -1,3 +1,5 @@
+Bien démarrer : Installer Jenkins sur une machine virtuelle Linux Azure : https://docs.microsoft.com/fr-fr/azure/developer/jenkins/configure-on-linux-vm
+
 #!/bin/sh
 az group create --name B3G4RG --location japaneast
 az vm create -n vmjenkins --resource-group B3G4RG --image Debian:debian-10:10:latest --generate-ssh-keys
