@@ -1,2 +1,12 @@
-az group create --name B3G4 --location japaneast
+#!/bin/sh
+az group create --name B3G4RG --location japaneast
 az vm create -n vmjenkins --resource-group B3G4 --image Debian:debian-10:10:latest --generate-ssh-keys
+
+
+# az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
+
+az group delete --name B3G4 --no-wait --yes
+
+
+az network vnet create --resource-group B3G4RG --name MyVnet --address-prefix 10.0.0.0/16 --subnet-name AzureBastionSubnet --subnet-prefix 10.0.0.0/24 --location japaneast
+az network public-ip create --resource-group B3G4RG --name MyIp --sku Standard --location japaneast
