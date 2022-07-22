@@ -1,6 +1,6 @@
 #!/bin/sh
 az group create --name B3G4RG --location japaneast
-az vm create -n vmjenkins --resource-group B3G4 --image Debian:debian-10:10:latest --generate-ssh-keys
+az vm create -n vmjenkins --resource-group B3G4RG --image Debian:debian-10:10:latest --generate-ssh-keys
 
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
