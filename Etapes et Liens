@@ -46,3 +46,7 @@ https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/overvie
 
 14 dns : 
 https://docs.microsoft.com/fr-fr/cli/azure/network/public-ip?view=azure-cli-latest
+
+Slides en markdown : installer marp for vs code sur visual studio code
+Ensuite regarder la vidéo : https://www.youtube.com/watch?v=TObd8hnPa8w
+Tuto avec explications pour chaque commande : https://marketplace.visualstudio.com/items?itemName=marp-team.marp-vscode
