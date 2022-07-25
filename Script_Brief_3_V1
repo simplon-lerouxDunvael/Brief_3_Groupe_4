@@ -1,7 +1,11 @@
 Bien démarrer : Installer Jenkins sur une machine virtuelle Linux Azure : https://docs.microsoft.com/fr-fr/azure/developer/jenkins/configure-on-linux-vm
+Installer un fqdn : https://docs.microsoft.com/en-us/azure/dns/dns-getstarted-cli
 
 #!/bin/sh
 az group create --name B3G4RG --location japaneast
+<< ////az network dns record-set a add-record -g B3G4RG -z contoso.xyz -n www -a 10.10.10.10
+az network dns record-set list -g B3G4RG -z contoso.xyz
+////
 az vm create -n vmjenkins --resource-group B3G4RG --image Debian:debian-10:10:latest --generate-ssh-keys
 
 
