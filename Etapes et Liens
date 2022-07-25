@@ -1,0 +1,48 @@
+1 ressource groupe : 
+https://docs.microsoft.com/fr-fr/cli/azure/group?view=azure-cli-latest
+
+2 vnet : 
+https://docs.microsoft.com/fr-fr/cli/azure/network/vnet?view=azure-cli-latest
+
+3 adresse ip du vnet avec le subnet : 
+https://docs.microsoft.com/fr-fr/cli/azure/network/vnet?view=azure-cli-latest
+
+4 bastion : 
+https://docs.microsoft.com/fr-fr/azure/bastion/create-host-cli
+bastion et la vm ne sont pas dans le même sous-réseau mais sont avec le même masque de sous-réseau 
+
+5 création et chiffrement du disque : https://docs.microsoft.com/fr-fr/cli/azure/disk?view=azure-cli-latest
+https://azure.microsoft.com/fr-fr/blog/azure-cli-managed-disks/
+
+6 adresse ip de la VM : 
+https://blogs.objectsharp.com/post/2019/01/23/Create-Azure-VM-without-a-Public-IP-using-Azure-CLI.aspx
+https://docs.microsoft.com/en-us/azure/virtual-network/ip-services/virtual-network-deploy-static-pip-arm-cli
+az vm create --public-ip-address myPublicIP 
+
+7 création de la vm avec l'adresse IP : 
+https://docs.microsoft.com/en-us/azure/virtual-machines/linux/tutorial-manage-vm
+
+8 montage du disque dur : 
+https://docs.microsoft.com/en-us/azure/virtual-machines/linux/add-disk
+https://docs.microsoft.com/en-us/azure/virtual-machines/linux/tutorial-manage-disks
+
+9 création et configuration des comptes nominatifs avec droits administrateurs : 
+https://docs.microsoft.com/fr-fr/cli/azure/vm/user?view=azure-cli-latest
+
+10 ssh and certificats (clés publiques et RSA) : 
+https://www.robokiwi.com/wiki/azure/dns/lets-encrypt/
+
+11 installation de jenkins : 
+https://www.jenkins.io/doc/book/installing/linux/
+
+12 rétention des logs et sauvegarde pendant 14 jours : 
+https://docs.microsoft.com/fr-fr/cli/azure/monitor/log-analytics/workspace?view=azure-cli-latest
+https://docs.microsoft.com/fr-fr/cli/azure/storage/logging?view=azure-cli-latest
+https://docs.microsoft.com/fr-fr/azure/backup/quick-backup-vm-cli
+
+13 rollback : 
+https://stackoverflow.com/questions/36211557/how-to-remove-all-deployed-resources-based-on-deployment-name-in-azure
+https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/overview#resource-groups
+
+14 dns : 
+https://docs.microsoft.com/fr-fr/cli/azure/network/public-ip?view=azure-cli-latest
