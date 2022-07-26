@@ -1,30 +1,47 @@
 #!/bin/sh
 NOMVM="debian-gr4"
 NOMGR="BrGr-4"
+ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
+NOMBASTION="BastionGr4"
+NOMDISK="diskgr4"
 LOCAL="JapanEast"
-az group create --location JapanEast --name $NOMGR
+az group create --location $LOCAL --name $NOMGR
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
+
+# Extention pour avoir toute les commandes et option disponible
+# az interactive
+# installation SSH    
+# az ssh
+
+# COMMANDE DE SUPPRESSION
 # az group delete -n BrGr-4
 az network vnet create --resource-group $NOMGR --name $NOMVNET --address-prefix 10.0.0.0/16 --subnet-name AzureBastionSubnet --subnet-prefix 10.0.0.0/24 --location $LOCAL
-az network public-ip create --resource-group $NOMGR --name ipbastion --sku Standard --location $LOCAL
+az network public-ip create --resource-group $NOMGR --name ipbastion --sku Standard --allocation-method Static --location $LOCAL
 az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard --allocation-method Static --sku Standard --location $LOCAL
 az network bastion create --location $LOCAL --name BastionGr4 --public-ip-address ipbastion --resource-group $NOMGR --vnet-name $NOMVNET
-# creation des disques
+# creation des disques et attachement
+az extension add --name ssh
+az disk create --name $NOMDISK --resource-group $NOMGR --size-gb 64 --location $LOCAL --encryption-type EncryptionAtRestWithPlatformKey
+diskId=$(az disk show -g $NOMGR -n $NOMDISK --query 'id' -o tsv)
 
-az disk create --name diskgr4 --resource-group $NOMGR --size-gb 8 --location $LOCAL
+az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId
 
-IPVM=$(az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username azureadmin --vnet-name $NOMVNET --subnet-address-prefix 10.0.0.0/26 --public-ip-address ipvm --subnet SubVM --location $LOCAL| jq ".publicIpAddress" | sed -e "s/\"//g")
+IPVM=$(az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username $ADMINUSER --vnet-name $NOMVNET --subnet-address-prefix 10.0.1.0/24 --public-ip-address ipvm --subnet SubVM --location $LOCAL | jq ".publicIpAddress" | sed -e "s/\"//g")
 echo "#######################"
 echo "# $IPVM #"
 echo "#######################" 
-# az vm create -n $NOMVM -g BrGr-4 --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username azureuser --vnet-name $NOMVNET --public-ip-address ipvm
+# az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username $ADMINUSER --vnet-name $NOMVNET --public-ip-address ipvm
 az vm open-port --port 80 --resource-group $NOMGR --name $NOMVM
+az vm open-port --port 22 --resource-group $NOMGR --name $NOMVM
 
 
 # connection à la vm avec bastion
-az network bastion ssh --name BastionGr4 --resource-group BrGr-4 --target-resource-id $NOMVM --auth-type "ssh-key" --username azureuser #--ssh-key "<Filepath>"
+az network bastion ssh --name $NOMBASTION --resource-group $NOMGR --target-resource-id $NOMVM --auth-type "ssh-key" --username $ADMINUSER #--ssh-key "<Filepath>"
+
+# activer le tunneling dans bastion
+# az resource update --ids <bastion resource ids> --set properties.enableTunneling=True
 
 # connection à la vm
 # ssh azureuser@$IPVM 
