@@ -6,6 +6,8 @@ NOMVNET="vnetgr4"
 NOMBASTION="BastionGr4"
 NOMDISK="diskgr4"
 LOCAL="JapanEast"
+RSA="$HOME/.ssh/id_rsa.pub"
+
 az group create --location $LOCAL --name $NOMGR
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
@@ -23,12 +25,12 @@ az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard -
 BAS=$(az network bastion create --location $LOCAL --name $NOMBASTION --public-ip-address ipbastion --resource-group $NOMGR --vnet-name $NOMVNET)
 IDBAST=$(echo $BAS | jq -r ".id")
 # CRÉATION DE LA VM  ==> jq -r == | sed -e "s/\"//g") pour enlever les ""
-RES=$(az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username $ADMINUSER --vnet-name $NOMVNET --subnet-address-prefix 10.0.1.0/24 --public-ip-address ipvm --subnet SubVM --location $LOCAL)
+RES=$(az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --ssh-key-values $RSA --generate-ssh-keys --public-ip-sku Standard --admin-username $ADMINUSER --vnet-name $NOMVNET --subnet-address-prefix 10.0.1.0/24 --public-ip-address ipvm --subnet SubVM --location $LOCAL)
 IPVM=$(echo $RES | jq -r ".publicIpAddress")
 IDVM=$(echo $RES | jq -r ".id")
 
 echo "#######################"
-echo "# $IPVM #"
+echo "#    $IPVM    #"
 echo "#######################" 
 
 # creation des disques et attachement
@@ -42,23 +44,17 @@ az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId
 az vm open-port --port 80 --resource-group $NOMGR --name $NOMVM --priority 155
 az vm open-port --port 22 --resource-group $NOMGR --name $NOMVM --priority 158
 
+
+#az vm wait --created
 # connection à la vm avec bastion
-SSHVM=$(az sshkey show --ids $IDVM --name $NOMVM -resource-group $NOMGR)
+SSHVM=$(az sshkey show --ids $IDVM --name $NOMVM --resource-group $NOMGR)
 
 az resource update --ids $IDBAST --set properties.enableTunneling=True
-az network bastion ssh --name $NOMBASTION --resource-group $NOMGR --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key $SSHVM
+az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR 
 
 # activer le tunneling dans bastion
 # az resource update --ids <bastion resource ids> --set properties.enableTunneling=True
-
-# connection à la vm
-# ssh azureuser@$IPVM 
-# sudo apt update && apt -y upgrade
-# apt install default-jdk
-# créeation d'un utilisateur tomcat et installation apache tomcat
-# groupadd tomcat
+# az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts "sudo su - && apt update && apt -y upgrade && apt install -y default-jdk && groupadd tomcat && apt -y install tomcat9 tomcat9-admin "
 # useradd -g tomcat -d /opt/tomcat -s /bin/nologin tomcat
-
-# sudo apt -y install tomcat9 tomcat9-admin
 
 
