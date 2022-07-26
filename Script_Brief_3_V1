@@ -49,4 +49,5 @@ sudo partprobe /dev/sdc1
 ////
 
 Créer un tunneling avec bastion => https://docs.microsoft.com/en-us/cli/azure/resource?view=azure-cli-latest#az-resource-update
+https://docs.microsoft.com/en-us/rest/api/virtualnetwork/bastion-hosts/create-or-update?tabs=HTTP#request-body
 az resource update --ids <bastion resource ids> --set properties.enableTunneling=True
