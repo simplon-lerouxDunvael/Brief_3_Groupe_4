@@ -1,3 +1,6 @@
+# az login
+# az interactive : https://docs.microsoft.com/fr-fr/cli/azure/interactive-azure-cli
+
 1 ressource groupe : 
 https://docs.microsoft.com/fr-fr/cli/azure/group?view=azure-cli-latest
 
