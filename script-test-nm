@@ -1,0 +1,39 @@
+#!/bin/sh
+NOMVM="debian-gr4"
+NOMGR="BrGr-4"
+NOMVNET="vnetgr4"
+LOCAL="JapanEast"
+az group create --location JapanEast --name $NOMGR
+
+# az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
+# az group delete -n BrGr-4
+az network vnet create --resource-group $NOMGR --name $NOMVNET --address-prefix 10.0.0.0/16 --subnet-name AzureBastionSubnet --subnet-prefix 10.0.0.0/24 --location $LOCAL
+az network public-ip create --resource-group $NOMGR --name ipbastion --sku Standard --location $LOCAL
+az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard --allocation-method Static --sku Standard --location $LOCAL
+az network bastion create --location $LOCAL --name BastionGr4 --public-ip-address ipbastion --resource-group $NOMGR --vnet-name $NOMVNET
+# creation des disques
+
+az disk create --name diskgr4 --resource-group $NOMGR --size-gb 8 --location $LOCAL
+
+IPVM=$(az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username azureadmin --vnet-name $NOMVNET --subnet-address-prefix 10.0.0.0/26 --public-ip-address ipvm --subnet SubVM --location $LOCAL| jq ".publicIpAddress" | sed -e "s/\"//g")
+echo "#######################"
+echo "# $IPVM #"
+echo "#######################" 
+# az vm create -n $NOMVM -g BrGr-4 --image Debian:debian-11:11:latest --generate-ssh-keys --public-ip-sku Standard --admin-username azureuser --vnet-name $NOMVNET --public-ip-address ipvm
+az vm open-port --port 80 --resource-group $NOMGR --name $NOMVM
+
+
+# connection à la vm avec bastion
+az network bastion ssh --name BastionGr4 --resource-group BrGr-4 --target-resource-id $NOMVM --auth-type "ssh-key" --username azureuser #--ssh-key "<Filepath>"
+
+# connection à la vm
+# ssh azureuser@$IPVM 
+# sudo apt update && apt -y upgrade
+# apt install default-jdk
+# créeation d'un utilisateur tomcat et installation apache tomcat
+# groupadd tomcat
+# useradd -g tomcat -d /opt/tomcat -s /bin/nologin tomcat
+
+# sudo apt -y install tomcat9 tomcat9-admin
+
+
