@@ -1,0 +1,29 @@
+java 8 pour le LTR pour jenkins car nouvelle release en septembre 2022
+
+JENKINS
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins
+
+JAVA = https://www.it-connect.fr/installer-java-sous-debian-8-via-apt-get/
+https://docs.datastax.com/en/jdk-install/doc/jdk-install/installOpenJdkDeb.html
+sudo apt-get update
+sudo apt-get install default-jdk
+sudo apt-get install software-properties-common
+sudo add-apt-repository "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main"
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+javac -version
+sudo nano /etc/environment
+JAVA_HOME="/usr/lib/jvm/java-8-oracle" (Ajoutez la déclaration de la variable "JAVA_HOME" ayant pour valeur le chemin vers le dossier copié précédemment, mais retirez la fin du chemin à savoir "/jre/bin/java")
+source /etc/environment
+echo $JAVA_HOME
+
+START JENKINS
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
