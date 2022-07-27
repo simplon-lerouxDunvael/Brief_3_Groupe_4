@@ -1,0 +1,42 @@
+https://docs.microsoft.com/fr-fr/azure/backup/quick-backup-vm-cli#code-try-0
+
+# Créer un coffre recovery services
+az backup vault create --resource-group $NOMGR --name myRecoveryServicesVault --$LOCAL
+
+az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy "LocallyRedundant/GeoRedundant"
+
+# Activer la sauvegarde pour une machine virtuelle Azure
+az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
+az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $IDVM --policy-name DefaultPolicy
+
+# Démarrer la sauvegarde
+az backup protection backup-now --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --retain-until jj-mm-aaaa
+
+# Surveiller le travail de sauvegarde
+az backup job list --resource-group $NOMGR --vault-name myRecoveryServicesVault --output table
+
+# Nettoyer le déploiement
+az backup protection disable --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --delete-backup-data true
+az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault
+az group delete --name $NOMGR
+
+
+# Disque : 
+# Trouver le disque :
+lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
+
+# Formater le disque :(Replace sdc with the correct option for your disk)
+sudo parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
+sudo mkfs.xfs /dev/sdc1
+sudo partprobe /dev/sdc1
+
+# Monter le disque : 
+sudo mkdir /datadrive
+sudo mount /dev/sdc1 /datadrive
+
+# Faire persister le disque après redémarrage :
+sudo blkid
+sudo nano /etc/fstab
+
+# Ajouter la valeur UUID du disque monté (la valeur est affichée avec la commande précédente) :
+UUID=33333333-3b3b-3c3c-3d3d-3e3e3e3e3e3e   /datadrive   xfs   defaults,nofail   1   2
