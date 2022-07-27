@@ -20,6 +20,28 @@ az backup protection disable --resource-group $NOMGR --vault-name myRecoveryServ
 az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault
 az group delete --name $NOMGR
 
+# Option et configuration de la sauvegarde et de la rétention :
+--geo-redundant-backup décide de l'Option de redondance de sauvegarde. Si Enabled, des sauvegardes géo-redondantes sont effectuées. Ou si Disabled, des sauvegardes localement redondantes sont effectuées.
+--backup-retention-days définit la période de rétention des sauvegardes => --backup-retention-14
+
+# Pour quelque chose de chiffré :
+# Enter the name of the resource group where the key vault is located on this variable
+AZ_KEYVAULT_RGROUP=TestKeyVaultRG
+
+# Enter the name of the key vault on this variable
+AZ_KEYVAULT_NAME=TestKeyVault
+
+# Get the object id for the Backup Management Service on your subscription
+AZ_ABM_OBJECT_ID=$( az ad sp list --display-name "Backup Management Service" --query '[].objectId' -o tsv --only-show-errors )
+
+# This command will grant the permissions required by the Backup Management Service to access the key vault
+az keyvault set-policy --key-permissions get list backup --secret-permissions get list backup \
+  --resource-group $AZ_KEYVAULT_RGROUP --name $AZ_KEYVAULT_NAME --object-id $AZ_ABM_OBJECT_ID
+
+
+# Il faut sauvegarder la VM et le disque dur pour les données des utilisateurs. La solution serait de partitionner le disque user pour y faire aller les logs de jenkins d'un côté et de l'autre avoir les données des utilisateurs. Ensuite il faut sauvegarder quotidiennement la VM et les logs, avoir une rétention de 14 jours et garder les logs pendant 1 an. 
+# Checker les logs de jenkins = https://www.jenkins.io/doc/book/system-administration/viewing-logs/
+# Sauvegarde et restauration sélectives de disques pour les machines virtuelles Azure = https://docs.microsoft.com/fr-fr/azure/backup/selective-disk-backup-restore
 
 # Disque : 
 # Trouver le disque :
