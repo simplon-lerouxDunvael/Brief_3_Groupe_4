@@ -42,6 +42,7 @@ az keyvault set-policy --key-permissions get list backup --secret-permissions ge
 # Il faut sauvegarder la VM et le disque dur pour les données des utilisateurs. La solution serait de partitionner le disque user pour y faire aller les logs de jenkins d'un côté et de l'autre avoir les données des utilisateurs. Ensuite il faut sauvegarder quotidiennement la VM et les logs, avoir une rétention de 14 jours et garder les logs pendant 1 an. 
 # Checker les logs de jenkins = https://www.jenkins.io/doc/book/system-administration/viewing-logs/
 # Sauvegarde et restauration sélectives de disques pour les machines virtuelles Azure = https://docs.microsoft.com/fr-fr/azure/backup/selective-disk-backup-restore
+https://docs.microsoft.com/fr-fr/cli/azure/disk-encryption-set?view=azure-cli-latest
 
 # Disque : 
 # Trouver le disque :
