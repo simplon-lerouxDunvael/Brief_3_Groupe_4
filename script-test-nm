@@ -1,12 +1,12 @@
 #!/bin/bash
 NOMVM="debian-gr4"
-NOMGR="BrGr4"
+NOMGR="BrG4" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="BastionGr4"
 NOMDISK="diskgr4"
 LOCAL="JapanEast"
-RSA="$HOME/.ssh/id_rsa.pub"
+RSA="@authorized_keys" #"$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
 MENU=0
@@ -68,7 +68,7 @@ create_vm() {
         echo "###############################"
         echo "# IP DE LA VM : $IPVM  #"
         echo "###############################" 
-    echo " Ouverture des ports 22 et 80 "
+    echo " Ouverture des ports 22, 8080 et 80 "
     cmd "az vm open-port --port 80 --resource-group $NOMGR --name $NOMVM --priority 155" "ouverture port 80"
     cmd "az vm open-port --port 8080 --resource-group $NOMGR --name $NOMVM --priority 159" "ouverture port 8080"
     cmd "az vm open-port --port 22 --resource-group $NOMGR --name $NOMVM --priority 158" "ouverture port 22"
@@ -80,19 +80,25 @@ create_disk() {
     echo " Création du disque"
     cmd "az disk create --name $NOMDISK --resource-group $NOMGR --size-gb 64 --location $LOCAL --encryption-type EncryptionAtRestWithPlatformKey" "création du disque"
     echo " Voir l'ID Disk"
-diskId=$(az disk show -g $NOMGR -n $NOMDISK --query 'id' -o tsv)
-#az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId
+    diskId=$(az disk show -g $NOMGR -n $NOMDISK --query 'id' -o tsv)
+    #az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId
     cmd "az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId" "attachement du disque"
 
 }
 
 create_connect() {
-echo " Installation script Jenkins"
-az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts 'sudo su - && apt update && install openjdk-11-jdk && curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | tee \  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \  https://pkg.jenkins.io/debian-stable binary/ | tee \  /etc/apt/sources.list.d/jenkins.list > /dev/null && apt update && apt install jenkins && systemctl enable jenkins --now && cat /var/lib/jenkins/secrets/initialAdminPassword > KEY_JENJINS.txt'
-    echo " Connection à la VM via Bastion"
+    echo " Installation du script Jenkins :"
+    out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_jenkins.sh)
+    JENKEY=$(echo $out | jq -r '.value[0].message' | grep -B2 '\[stderr\]' | head -1)
+    echo " Ouverture du tunneling"
     cmd "az resource update --ids $IDBAST --set properties.enableTunneling=True" "update des ressources"
-az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
+    echo "##################################################"
+    echo "# Installation OK, pour terminer :               #"
+    echo "# Aller sur :  http://$IPVM:8080         #"
+    echo "# Clée Jenkin : $JENKEY        #"
+    echo "##################################################"
+    echo " Connection à la VM via Bastion"
+    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 
 }
 
@@ -117,9 +123,9 @@ fi
 if [ $MENU -lt 6 ]; then
     create_connect
 fi
-#if [[ $1=="del" ]]; then
-#rollback
-#fi
+    #if [[ $1=="del" ]]; then
+    #rollback
+    #fi
 exit 0
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
