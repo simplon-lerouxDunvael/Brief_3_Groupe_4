@@ -1,19 +1,13 @@
-# Installer Java puis Jenkins :
+sudo su - 
+apt-get update 
+apt-get install -y openjdk-11-jdk 
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | tee \  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \  https://pkg.jenkins.io/debian-stable binary/ | tee \  /etc/apt/sources.list.d/jenkins.list > /dev/null
+apt-get update && apt-get install -y jenkins
+#if $?...; then
+#    echo "ERROR"
+#    exit 1
+#fi
+systemctl enable jenkins --now
 
-#JAVA = https://docs.datastax.com/en/jdk-install/doc/jdk-install/installOpenJdkDeb.html
-sudo apt update
-sudo apt install openjdk-11-jre -y
-java -version
-
-#JENKINS
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \  /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update
-sudo apt-get install jenkins
-
-#START JENKINS
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
-sudo systemctl status jenkins
-
-https://docs.oracle.com/en/cloud/cloud-at-customer/occ-get-started/generate-ssh-key-pair.html
+cat /var/lib/jenkins/secrets/initialAdminPassword
