@@ -37,6 +37,8 @@ https://www.robokiwi.com/wiki/azure/dns/lets-encrypt/
 
 11 installation de jenkins : 
 https://www.jenkins.io/doc/book/installing/linux/
+Aller dans la configuration de jenkins : https://phoenixnap.com/kb/change-jenkins-home-directory#:~:text=Note%3A%20The%20default%20location%20for,%2Fetc%2Fsysconfig%2Fjenkins.
+`sudo nano /etc/default/jenkins`
 
 12 rétention des logs et sauvegarde pendant 14 jours : 
 https://docs.microsoft.com/fr-fr/cli/azure/monitor/log-analytics/workspace?view=azure-cli-latest
