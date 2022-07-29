@@ -11,8 +11,8 @@ pvcreate /dev/sdc
 vgcreate monGV-GR4 /dev/sdc  
 
 ### Créer un Volume logique dans un VG
-lvcreate -n monLV-GR4-LOG -L 20g monGV-GR4 
-lvcreate -n monLV-GR4-USERS -L 30g monGV-GR4 
+lvcreate -n monLV-GR4-LOG -L 20g monGV-GR4 -y
+lvcreate -n monLV-GR4-USERS -L 30g monGV-GR4 -y
 
 ### Formater le disque logique dans le système de fichiers souhaité 
 sleep 25
