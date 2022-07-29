@@ -93,8 +93,9 @@ UUID=33333333-3b3b-3c3c-3d3d-3e3e3e3e3e3e   /datadrive   xfs   defaults,nofail  
 
 ### Vérification du fonctionnement  
 `mkdir /test`
-`# mount /dev/monGroupeVirtuel1/monVolumeLogique1 /test
-df -h`  
+`# mount /dev/monGroupeVirtuel1/monVolumeLogique1 /test`
+### Pour vérifier les disques présents et leur taille 
+`df -h`  
 
 ### Vérification des LV  
 `lvdisplay` 
