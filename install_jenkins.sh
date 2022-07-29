@@ -3,7 +3,7 @@ apt-get update
 
 
 ### Installation LVM
-apt-get install lvm2 && /etc/init.d/lvm start
+apt-get -y install lvm2 && /etc/init.d/lvm start
 
 ### Création Volume Physique
 pvcreate /dev/sdc 
@@ -15,6 +15,7 @@ lvcreate -n monLV-GR4-LOG -L 20g monGV-GR4
 lvcreate -n monLV-GR4-USERS -L 30g monGV-GR4 
 
 ### Formater le disque logique dans le système de fichiers souhaité 
+sleep 25
 mkfs -t ext4 /dev/monGV-GR4/monVL-GR4-LOG
 mkfs -t ext4 /dev/monGV-GR4/monVL-GR4-USERS
 
