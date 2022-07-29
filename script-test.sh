@@ -1,6 +1,9 @@
 #!/bin/bash
+
+# PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
+
 NOMVM="debian-gr4"
-NOMGR="BrG4" #CHANGER LE NOM
+NOMGR="BrG-4" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="BastionGr4"
@@ -97,11 +100,38 @@ create_connect() {
     echo "# Aller sur :  http://$IPVM:8080         #"
     echo "# Clée Jenkin : $JENKEY        #"
     echo "##################################################"
+    $PASS2=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts "cat /var/lib/jenkins/secrets/initialAdminPassword")
+    echo "# Clée Jenkin MÉTHODE 2 : $PASS2        #"
     echo " Connection à la VM via Bastion"
-    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
+    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key $RSA --name $NOMBASTION --resource-group $NOMGR
 
 }
 
+#create_backup() {
+    <<EOF
+    echo " Installation du script Jenkins :"
+    # Créer un coffre recovery services
+    az backup vault create --resource-group $NOMGR --name myRecoveryServicesVault --$LOCAL
+
+    az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy "LocallyRedundant/GeoRedundant"
+
+    # Activer la sauvegarde pour une machine virtuelle Azure
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $IDVM --policy-name DefaultPolicy
+
+    # Démarrer la sauvegarde
+    az backup protection backup-now --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --retain-until jj-mm-aaaa
+
+    # Surveiller le travail de sauvegarde
+    az backup job list --resource-group $NOMGR --vault-name myRecoveryServicesVault --output table
+
+    # Nettoyer le déploiement
+    az backup protection disable --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --delete-backup-data true
+    az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault
+    az group delete --name $NOMGR
+
+}
+EOF
 
 if [ $MENU -lt 1 ]; then
     cmd "az group create --location $LOCAL --name $NOMGR" "création de groupe"
@@ -123,6 +153,11 @@ fi
 if [ $MENU -lt 6 ]; then
     create_connect
 fi
+#if [ $MENU -lt 7 ]; then
+#    create_backup
+#fi
+
+
     #if [[ $1=="del" ]]; then
     #rollback
     #fi
@@ -147,3 +182,4 @@ exit 0
 # az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts "sudo su - && apt update && apt -y upgrade && apt install -y default-jdk && groupadd tomcat && apt -y install tomcat9 tomcat9-admin "
 # commande script bash Azure
 # az vm run-command invoke -g MyResourceGroup -n MyVm --command-id RunShellScript --scripts 'echo $1 $2' --parameters hello world
+
