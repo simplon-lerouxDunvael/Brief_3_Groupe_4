@@ -15,14 +15,16 @@ lvcreate -n monLV-GR4-LOG -L 20g monGV-GR4 -y
 lvcreate -n monLV-GR4-USERS -L 30g monGV-GR4 -y
 
 ### Formater le disque logique dans le système de fichiers souhaité 
-sleep 25
-mkfs -t ext4 /dev/monGV-GR4/monVL-GR4-LOG
-mkfs -t ext4 /dev/monGV-GR4/monVL-GR4-USERS
+sleep 2
+
+
+mkfs -t ext4 /dev/monGV-GR4/monLV-GR4-LOG
+mkfs -t ext4 /dev/monGV-GR4/monLV-GR4-USERS
 
 mv /var/log /var/log2 
 
-mount /dev/monGV-GR4/monVL-GR4-LOG /var/log
-mount /dev/monGV-GR4/monVL-GR4-USERS /var/lib/jenkins/userContent
+mount /dev/monGV-GR4/monLV-GR4-LOG /var/log
+mount /dev/monGV-GR4/monLV-GR4-USERS /var/lib/jenkins/userContent
 
 mv -f /var/log2 /var/log 
 
