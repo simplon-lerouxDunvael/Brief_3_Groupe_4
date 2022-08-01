@@ -1,12 +1,12 @@
 https://docs.microsoft.com/fr-fr/azure/backup/quick-backup-vm-cli#code-try-0
 
 # Créer un coffre recovery services
-az backup vault create --location JapanEast --name MyRecoveryServicesVault --resource-group DDRG
+az backup vault create --location $LOCAL --name MyRecoveryServicesVault --resource-group $NOMGR
 
-az backup vault backup-properties set --name myRecoveryServicesVault --resource-group DDRG --backup-storage-redundancy LocallyRedundant
+az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy LocallyRedundant
 
 # Activer la sauvegarde pour une machine virtuelle Azure
-az backup protection enable-for-vm --resource-group DDRG --vault-name myRecoveryServicesVault --vm debian-gr4 --policy-name DefaultPolicy
+az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
 az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $IDVM --policy-name DefaultPolicy
 
 # Démarrer la sauvegarde
