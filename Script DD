@@ -104,7 +104,7 @@ create_connect() {
     $PASS2=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts "cat /var/lib/jenkins/secrets/initialAdminPassword")
     echo "# Clée Jenkin MÉTHODE 2 : $PASS2        #"
     echo " Connection à la VM via Bastion"
-    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key $HOME/.ssh/id_rsa.pub --name $NOMBASTION --resource-group $NOMGR
+    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 
 }
 
