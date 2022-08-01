@@ -15,7 +15,7 @@ lvcreate -n monLV-GR4-LOG -L 20g monGV-GR4 -y
 lvcreate -n monLV-GR4-USERS -L 30g monGV-GR4 -y
 
 ### Formater le disque logique dans le système de fichiers souhaité 
-sleep 2
+sleep 15
 
 
 mkfs -t ext4 /dev/monGV-GR4/monLV-GR4-LOG
@@ -26,16 +26,14 @@ mv /var/log /var/log2
 mount /dev/monGV-GR4/monLV-GR4-LOG /var/log
 mount /dev/monGV-GR4/monLV-GR4-USERS /var/lib/jenkins/userContent
 
-mv -f /var/log2 /var/log 
+mv -f /var/log2/* /var/log 
+rmdir log2
 
 apt-get install -y openjdk-11-jdk 
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | tee \  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \  https://pkg.jenkins.io/debian-stable binary/ | tee \  /etc/apt/sources.list.d/jenkins.list > /dev/null
-apt-get update && apt-get install -y jenkins
-#if $?...; then
-#    echo "ERROR"
-#    exit 1
-#fi
+apt-get update && apt-get -y install jenkins
+
 systemctl enable jenkins --now
 
 cat /var/lib/jenkins/secrets/initialAdminPassword
