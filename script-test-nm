@@ -1,10 +1,15 @@
 #!/bin/bash
+
+# PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
+
+
 NOMVM="debian-gr4"
 NOMGR="BrG4" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="BastionGr4"
 NOMDISK="diskgr4"
+FQDN="gr4"
 LOCAL="JapanEast"
 RSA="@authorized_keys" #"$HOME/.ssh/id_rsa.pub"
 RETVAL=
@@ -18,14 +23,18 @@ MENU=0
 # 3 Installe à partir de la VM     #
 # 4 Création du disque additionel  #
 # 5 Connection ssh/bastion à la VM #
+# 6 Certbot TLS                    #
+# 7 Service Backup                 #
 ####################################
-# Effaceur de ressources
+
+# Effaceur de ressources rollback
 rollback() {
     desc="$1"
     echo "Erreur lié à $desc"
     az group delete -n $NOMGR -y
     exit 0
 }
+
 
 ## fonction d'execution de commandes
 ## format: cmd "commande à executer", "description de la commande")
@@ -47,7 +56,7 @@ create_network() {
     cmd "az network public-ip create --resource-group $NOMGR --name ipbastion --sku Standard --allocation-method Static --sku Standard --location $LOCAL" "ip pour bastion"
     adresse_ipbastion=$RETVAL
     echo " Création de l'IP VM"
-    cmd "az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard --allocation-method Static --sku Standard --location $LOCAL" "ip pour vm"
+    cmd "az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard --allocation-method Static --sku Standard --dns-name $FQDN --location $LOCAL" "ip pour vm"
     adresse_ipvm=$RETVAL
 }
 
@@ -98,9 +107,19 @@ create_connect() {
     echo "# Clée Jenkin : $JENKEY        #"
     echo "##################################################"
     echo " Connection à la VM via Bastion"
-    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
+
 
 }
+
+
+create_certbot() {
+    echo " Installation du script Certbot :"
+    out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_certbot_apache.sh)
+    echo "$out"
+
+        az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
+}
+
 
 
 if [ $MENU -lt 1 ]; then
@@ -123,10 +142,51 @@ fi
 if [ $MENU -lt 6 ]; then
     create_connect
 fi
-    #if [[ $1=="del" ]]; then
-    #rollback
-    #fi
+if [ $MENU -lt 7 ]; then
+    create_certbot
+fi
+
+
 exit 0
+
+<<EOF
+
+create_backup() {
+    
+    echo " Installation de backup :"
+    # Créer un coffre recovery services
+    az backup vault create --resource-group $NOMGR --name myRecoveryServicesVault --$LOCAL
+
+    az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy "LocallyRedundant/GeoRedundant"
+
+    # Activer la sauvegarde pour une machine virtuelle Azure
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $IDVM --policy-name DefaultPolicy
+
+    # Démarrer la sauvegarde
+    az backup protection backup-now --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --retain-until jj-mm-aaaa
+
+    # Surveiller le travail de sauvegarde
+    az backup job list --resource-group $NOMGR --vault-name myRecoveryServicesVault --output table
+
+    # Nettoyer le déploiement
+    az backup protection disable --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --delete-backup-data true
+    az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault
+    az group delete --name $NOMGR
+
+}
+
+
+
+
+
+if [ $MENU -lt 8 ]; then
+    create_backup
+fi
+EOF
+
+
+
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
 # Extention pour avoir toute les commandes et option disponible
@@ -147,3 +207,4 @@ exit 0
 # az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts "sudo su - && apt update && apt -y upgrade && apt install -y default-jdk && groupadd tomcat && apt -y install tomcat9 tomcat9-admin "
 # commande script bash Azure
 # az vm run-command invoke -g MyResourceGroup -n MyVm --command-id RunShellScript --scripts 'echo $1 $2' --parameters hello world
+
