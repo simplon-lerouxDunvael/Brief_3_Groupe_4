@@ -1,10 +1,11 @@
 #!/bin/bash
+# ./script-test.sh nom_du_ressource_groupe numéro_MENU
 
 # PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
 
 # PAS DE MAJUSCULE POUR LES VARIABLES
 NOMVM="debian-gr4"
-NOMGR="gr40" #CHANGER LE NOM
+NOMGR="$1" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="bastiongr4"
@@ -14,7 +15,7 @@ LOCAL="japaneast"
 RSA="@authorized_keys" #"$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
-MENU=0
+MENU=$2
 ####################################
 #            M E N U               #
 # 0 Installe tout                  #
@@ -26,12 +27,14 @@ MENU=0
 # 6 Certbot TLS                    #
 # 7 Service Backup                 #
 ####################################
+# 9 Tout effacer                   #
+####################################
 
 # Effaceur de ressources rollback
 rollback() {
     desc="$1"
     echo "Erreur lié à $desc"
-    if [ ! -z "$ITEMID"]; then
+    if [ ! -z "$ITEMID" ]; then
 	    az backup protection disable --ids $ITEMID --delete-backup-data -y
     fi
     if [ ! -z "$VAULTID" ]; then
@@ -167,7 +170,6 @@ if [ $MENU -lt 4 ]; then
     create_vm
 fi
 if [ $MENU -lt 5 ]; then
-
     create_disk
 fi
 if [ $MENU -lt 6 ]; then
@@ -179,6 +181,10 @@ fi
 
 if [ $MENU -lt 8 ]; then
     create_backup
+fi
+
+if [ $MENU -eq 9 ]; then
+    rollback "l'utilisateur du script"
 fi
 
 exit 0
