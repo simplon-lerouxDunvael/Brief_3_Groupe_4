@@ -2,15 +2,15 @@
 
 # PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
 
-
+# PAS DE MAJUSCULE POUR LES VARIABLES
 NOMVM="debian-gr4"
-NOMGR="BrG4" #CHANGER LE NOM
+NOMGR="gr40" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
-NOMBASTION="BastionGr4"
+NOMBASTION="bastiongr4"
 NOMDISK="diskgr4"
-FQDN="gr4"
-LOCAL="JapanEast"
+FQDN="$NOMGR" # nom du groupe pour le FQDN ou changer par "le-nom"
+LOCAL="japaneast"
 RSA="@authorized_keys" #"$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
@@ -31,6 +31,12 @@ MENU=0
 rollback() {
     desc="$1"
     echo "Erreur lié à $desc"
+    if [ ! -z "$ITEMID"]; then
+	    az backup protection disable --ids $ITEMID --delete-backup-data -y
+    fi
+    if [ ! -z "$VAULTID" ]; then
+	    az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault -y --force
+    fi
     az group delete -n $NOMGR -y
     exit 0
 }
@@ -44,20 +50,17 @@ cmd() {
     desc=$2
     RETVAL=$($command)
     if [ $? -ne 0 ]; then
-        rollback "$desc" 
+        rollback "$desc"
     fi
 }
 
 create_network() {
     echo " Création du vnet"
     cmd "az network vnet create --resource-group $NOMGR --name $NOMVNET --address-prefix 10.0.0.0/16 --subnet-name AzureBastionSubnet --subnet-prefix 10.0.0.0/24 --location $LOCAL" "vnet"
-    vnet=$RETVAL
     echo " Création de l'IP bastion"
     cmd "az network public-ip create --resource-group $NOMGR --name ipbastion --sku Standard --allocation-method Static --sku Standard --location $LOCAL" "ip pour bastion"
-    adresse_ipbastion=$RETVAL
     echo " Création de l'IP VM"
     cmd "az network public-ip create --resource-group $NOMGR --name ipvm --sku Standard --allocation-method Static --sku Standard --dns-name $FQDN --location $LOCAL" "ip pour vm"
-    adresse_ipvm=$RETVAL
 }
 
 create_bastion() {
@@ -72,15 +75,16 @@ create_vm() {
     echo " Création de la VM"
     cmd "az vm create -n $NOMVM -g $NOMGR --image Debian:debian-11:11:latest --ssh-key-values $RSA --generate-ssh-keys --public-ip-sku Standard --admin-username $ADMINUSER --vnet-name $NOMVNET --subnet-address-prefix 10.0.1.0/24 --public-ip-address ipvm --subnet SubVM --location $LOCAL" "création_VM"
     RES=$RETVAL
-    IPVM=$(echo $RES | jq -r ".publicIpAddress")
-    IDVM=$(echo $RES | jq -r ".id")
-        echo "###############################"
-        echo "# IP DE LA VM : $IPVM  #"
-        echo "###############################" 
-    echo " Ouverture des ports 22, 8080 et 80 "
+    IPVM=$(echo "$RES" | jq -r ".publicIpAddress")
+    IDVM=$(echo "$RES" | jq -r ".id")
+    echo "################################"
+    echo "# IP DE LA VM : $IPVM  #"
+    echo "################################"
+    echo " Ouverture des ports 22, 8080, 443 et 80 "
     cmd "az vm open-port --port 80 --resource-group $NOMGR --name $NOMVM --priority 155" "ouverture port 80"
     cmd "az vm open-port --port 8080 --resource-group $NOMGR --name $NOMVM --priority 159" "ouverture port 8080"
     cmd "az vm open-port --port 22 --resource-group $NOMGR --name $NOMVM --priority 158" "ouverture port 22"
+    cmd "az vm open-port --port 443 --resource-group $NOMGR --name $NOMVM --priority 157" "ouverture port 443"
     cmd "az extension add --name ssh" "disk ssh"
 
 }
@@ -95,36 +99,62 @@ create_disk() {
 
 }
 
+create_certbot() {
+    echo " Installation du script Certbot :"
+    out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_certbot_apache.sh --parameters $FQDN $LOCAL)
+    echo $out
+
+
+}
+
 create_connect() {
     echo " Installation du script Jenkins :"
     out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_jenkins.sh)
-    JENKEY=$(echo $out | jq -r '.value[0].message' | grep -B2 '\[stderr\]' | head -1)
+    JENKEY=$(echo "$out" | jq -r '.value[0].message' | grep -B2 '\[stderr\]' | head -1)
     echo " Ouverture du tunneling"
     cmd "az resource update --ids $IDBAST --set properties.enableTunneling=True" "update des ressources"
-    echo "##################################################"
-    echo "# Installation OK, pour terminer :               #"
-    echo "# Aller sur :  http://$IPVM:8080         #"
-    echo "# Clée Jenkin : $JENKEY        #"
-    echo "##################################################"
+    echo "############################################################"
+    echo "# Installation OK, pour terminer :                         #"
+    echo "# Aller sur :  http://$IPVM:8080                  #"
+    echo "# Clée Jenkin : $JENKEY                      #"
+    echo "# Aller à http://$FQDN.$LOCAL.cloudapp.azure.com:8080  #"
+    echo "############################################################"
     echo " Connection à la VM via Bastion"
-
-
+    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 }
 
 
-create_certbot() {
-    echo " Installation du script Certbot :"
-    out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_certbot_apache.sh)
-    echo "$out"
-
-        az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
+create_backup() {
+    echo " Création de la sauvegarde/Backup :"
+    az backup vault create --location $LOCAL --name MyRecoveryServicesVault --resource-group $NOMGR
+    VAULTID=$(az backup vault -g $NOMGR | jq -r '.[].id')
+    az resource update --ids ${vaultid}/backupconfig/vaultconfig --set properties.softDeleteFeatureState=disabled
+    #az backup protection check-vm -g $NOMGR --vm $NOMVM
+    az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy LocallyRedundant
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
+    ITEMIDS=$(az backup item list -g $NOMGR -v myRecoveryServicesVault | jq -r '.[0].id')
 }
-
-
+    <<EOF
+    echo " Installation du script Jenkins :"
+    # Créer un coffre recovery services
+    az backup vault create --resource-group $NOMGR --name myRecoveryServicesVault --$LOCAL
+    az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy "LocallyRedundant/GeoRedundant"
+    # Activer la sauvegarde pour une machine virtuelle Azure
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
+    az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $IDVM --policy-name DefaultPolicy
+    # Démarrer la sauvegarde
+    az backup protection backup-now --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --retain-until jj-mm-aaaa
+    # Surveiller le travail de sauvegarde
+    az backup job list --resource-group $NOMGR --vault-name myRecoveryServicesVault --output table
+    # Nettoyer le déploiement
+    az backup protection disable --resource-group $NOMGR --vault-name myRecoveryServicesVault --container-name $NOMVM --item-name $NOMVM --backup-management-type AzureIaaSVM --delete-backup-data true
+    az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault
+    az group delete --name $NOMGR
+}
+EOF
 
 if [ $MENU -lt 1 ]; then
     cmd "az group create --location $LOCAL --name $NOMGR" "création de groupe"
-    RG=$RETVAL
     echo "Création du ressource groupe: $NOMGR"
 fi
 if [ $MENU -lt 2 ]; then
@@ -137,22 +167,26 @@ if [ $MENU -lt 4 ]; then
     create_vm
 fi
 if [ $MENU -lt 5 ]; then
+
     create_disk
 fi
 if [ $MENU -lt 6 ]; then
-    create_connect
-fi
-if [ $MENU -lt 7 ]; then
     create_certbot
 fi
+if [ $MENU -lt 7 ]; then
+    create_connect
+fi
 
+if [ $MENU -lt 8 ]; then
+    create_backup
+fi
 
 exit 0
 
-<<EOF
+<< EOF
 
 create_backup() {
-    
+
     echo " Installation de backup :"
     # Créer un coffre recovery services
     az backup vault create --resource-group $NOMGR --name myRecoveryServicesVault --$LOCAL
@@ -190,13 +224,13 @@ EOF
 
 # az vm wait # permet de mettre en attente la CLI jusqu'a ce qu'une condition soit remplie
 # Extention pour avoir toute les commandes et option disponible
-# az interactive 
-# installation SSH    
+# az interactive
+# installation SSH
 # az ssh
 # CRÉATION DE LA VM  ==> jq -r == | sed -e "s/\"//g") pour enlever les ""
 # creation des disques et attachement
 # SSHVM=$(az sshkey show --ids $IDVM --name $NOMVM --resource-group $NOMGR)
-### cat <<EOF | az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR 
+### cat <<EOF | az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 ### ls -l /
 ### pwd
 ### exit 0
