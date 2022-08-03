@@ -110,8 +110,8 @@ create_connect() {
     cmd "az resource update --ids $IDBAST --set properties.enableTunneling=True" "update des ressources"
     echo "############################################################"
     echo "# Installation OK, pour terminer :                         #"
-    echo "# Aller sur :  https://$IPVM:8080                   #"
-    echo "# Clée Jenkin : $JENKEY              #"
+    echo "# Aller sur :  http://$IPVM:8080                   #"
+    echo "# Clée Jenkin : $JENKEY           #"
     echo "# Aller à https://$FQDN.$LOCAL.cloudapp.azure.com     #"
     echo "############################################################"
 }
