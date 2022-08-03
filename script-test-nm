@@ -164,9 +164,7 @@ fi
 if [ $MENU -lt 8 ]; then
     create_backup
 fi
-
 if [ $MENU -eq 9 ]; then
     rollback "l'utilisateur du script"
 fi
-
 exit 0
