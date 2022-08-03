@@ -1,21 +1,23 @@
 #!/bin/bash
-# ./script-test.sh nom_du_ressource_groupe numéro_MENU
+# Pour lancer le script :
+# ./script-test.sh FQDN NOM_VM TAILLE_DISQUE LOCALISATION
 
 # PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
 
 # PAS DE MAJUSCULE POUR LES VARIABLES
-NOMVM="debian-gr4"
+NOMVM="$2"
 NOMGR="$1" # CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="bastiongr4"
 NOMDISK="diskgr4"
+taille_disque="$3"
 FQDN="$NOMGR" # nom du groupe pour le FQDN ou changer par "le-nom"
-LOCAL="japaneast"
+LOCAL="$4"
 RSA="@authorized_keys" # "$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
-MENU="$2"
+MENU=0
 ####################################
 #            M E N U               #
 # 0 Installe tout                  #
@@ -93,12 +95,11 @@ create_vm() {
 # fonction disque externe des données de logs et utilisateurs
 create_disk() {
     echo " Création du disque"
-    cmd "az disk create --name $NOMDISK --resource-group $NOMGR --size-gb 64 --location $LOCAL --encryption-type EncryptionAtRestWithPlatformKey" "création du disque"
+    cmd "az disk create --name $NOMDISK --resource-group $NOMGR --size-gb $taille_disque --location $LOCAL --encryption-type EncryptionAtRestWithPlatformKey" "création du disque"
     echo " Voir l'ID Disk"
     diskId=$(az disk show -g $NOMGR -n $NOMDISK --query 'id' -o tsv)
     cmd "az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId" "attachement du disque"
 }
-
 
 # fonction d'installation de jenkins
 create_connect() {
@@ -109,9 +110,9 @@ create_connect() {
     cmd "az resource update --ids $IDBAST --set properties.enableTunneling=True" "update des ressources"
     echo "############################################################"
     echo "# Installation OK, pour terminer :                         #"
-    echo "# Aller sur :  http://$IPVM:8080                   #"
+    echo "# Aller sur :  https://$IPVM:8080                   #"
     echo "# Clée Jenkin : $JENKEY              #"
-    echo "# Aller à http://$FQDN.$LOCAL.cloudapp.azure.com:8080  #"
+    echo "# Aller à https://$FQDN.$LOCAL.cloudapp.azure.com     #"
     echo "############################################################"
 }
 
@@ -120,8 +121,6 @@ create_certbot() {
     echo " Installation du script Certbot :"
     out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_certbot_apache.sh --parameters $FQDN $LOCAL)
     echo "$out"
-    echo " Connection à la VM via Bastion"
-    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 }
 
 # fonction de sauvegarde automatique
@@ -136,6 +135,8 @@ create_backup() {
     az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
     ITEMIDS=$(az backup item list -g $NOMGR -v myRecoveryServicesVault | jq -r '.[0].id')
     az backup protection backup-now --ids $ITEMIDS --retain-until 15-08-2022
+    echo " Connection à la VM via Bastion"
+    az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 }
 
 if [ $MENU -lt 1 ]; then
