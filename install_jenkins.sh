@@ -34,5 +34,8 @@ echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \  https://pkg.jenk
 apt-get update && apt-get -y install jenkins
 
 systemctl enable jenkins --now
+key=$(cat /var/lib/jenkins/secrets/initialAdminPassword)
+curl -o /tmp/jenkins-cli.jar http://localhost:8080/jnlpJars/jenkins-cli.jar 
+java -jar /tmp/jenkins-cli.jar -s http://localhost:8080/ who-am-i --username admin --password $key
 
 cat /var/lib/jenkins/secrets/initialAdminPassword
