@@ -5,12 +5,12 @@
 
 # PAS DE MAJUSCULE POUR LES VARIABLES
 NOMVM="debian-gr4"
-NOMGR="$1" # CHANGER LE NOM
+NOMGR=$1 # CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="bastiongr4"
 NOMDISK="diskgr4"
-FQDN="$NOMGR" # nom du groupe pour le FQDN ou changer par "le-nom"
+FQDN=$NOMGR # nom du groupe pour le FQDN ou changer par "le-nom"
 LOCAL="japaneast"
 RSA="@authorized_keys" # "$HOME/.ssh/id_rsa.pub"
 RETVAL=
@@ -32,15 +32,15 @@ MENU=$2
 
 # Efface les ressources sur azure
 rollback() {
-    desc="$1"
+    desc=$1
     echo "Erreur lié à $desc"
-    if [ ! -z "$ITEMID" ]; then
+    if [[ ! -z $ITEMID ]]; then
         az backup protection disable --ids $ITEMID --delete-backup-data -y
     fi
-    if [ ! -z "$VAULTID" ]; then
+    if [[ ! -z $VAULTID ]]; then
         az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault -y --force
     fi
-    az group delete -n "$NOMGR" -y
+    az group delete -n $NOMGR -y
     exit 0
 }
 
@@ -50,7 +50,7 @@ cmd() {
     desc=$2
     RETVAL=$($command)
     if [ $? -ne 0 ]; then
-        rollback "$desc"
+        rollback $desc
     fi
 }
 
@@ -96,7 +96,6 @@ create_disk() {
     cmd "az disk create --name $NOMDISK --resource-group $NOMGR --size-gb 64 --location $LOCAL --encryption-type EncryptionAtRestWithPlatformKey" "création du disque"
     echo " Voir l'ID Disk"
     diskId=$(az disk show -g $NOMGR -n $NOMDISK --query 'id' -o tsv)
-    #az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId
     cmd "az vm disk attach -g $NOMGR --vm-name $NOMVM --name $diskId" "attachement du disque"
 }
 
