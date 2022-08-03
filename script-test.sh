@@ -3,7 +3,7 @@
 # PREREQUIS INSTALLER LA LIBRAIRIE JQ ! apt install jq
 
 NOMVM="debian-gr4"
-NOMGR="dunvael" #CHANGER LE NOM
+NOMGR="testB" #CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="BastionGr4"
@@ -12,7 +12,7 @@ LOCAL="JapanEast"
 RSA="@authorized_keys" #"$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
-MENU=0
+MENU=6
 ####################################
 #            M E N U               #
 # 0 Installe tout                  #
@@ -117,12 +117,18 @@ create_connect() {
 create_backup() {
     echo " Création de la sauvegarde/Backup :"
     az backup vault create --location $LOCAL --name MyRecoveryServicesVault --resource-group $NOMGR
-    VAULTID=$(az backup vault -g $NOMGR | jq -r '.[].id')
-    az resource update --ids ${vaultid}/backupconfig/vaultconfig --set properties.softDeleteFeatureState=disabled
+    echo "NOMGR = ${NOMGR}"
+    SORTIE=$(az backup vault show --name MyRecoveryServicesVault --resource-group $NOMGR)
+    echo "etape toto avec ${SORTIE}:"
+    VAULTID=$(az backup vault show --name MyRecoveryServicesVault --resource-group $NOMGR | jq -r '.id')
+    echo "etape titi: VAULTID = ${VAULTID}."
+    az resource update --ids ${VAULTID}/backupconfig/vaultconfig --set properties.softDeleteFeatureState=disabled
     #az backup protection check-vm -g $NOMGR --vm $NOMVM
     az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy LocallyRedundant
+    echo "Nom de la VM: ${NOMVM}."
     az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
     ITEMIDS=$(az backup item list -g $NOMGR -v myRecoveryServicesVault | jq -r '.[0].id')
+    az backup protection backup-now --ids $ITEMIDS --retain-until 15-08-2022
 }
     <<EOF
     echo " Installation du script Jenkins :"
