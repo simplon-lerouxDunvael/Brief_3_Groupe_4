@@ -1,0 +1,121 @@
+---
+marp: true
+theme: gaia
+markdown.marp.enableHtml: true
+paginate: true
+---
+<!-- backgroundImage: "linear-gradient(to bottom,aqua, #0288d1)" -->
+
+<!--
+_color: black
+-->
+
+# Présentation Brief 3  
+*David, Dunvael, Nicolas*  
+
+<!-- paginate: true -->
+
+---
+# SOMMAIRE  
+I - Ressources utilisées
+II - Choix particuliers
+III - Nombre de scripts
+IV - Plan projet prévu VS plan projet exécuté
+V - Compréhension des outils et des logiciels
+VI - Difficultés
+VII - En cours de développement
+
+<!--
+_color: black
+-->
+---
+## I - Ressources utilisées  
+* Documentation Microsoft Azure
+* Portail Azure pour l'interface graphique
+* Moteur de recherche Google
+* Visual Studio Code
+* Github et HackMD
+* VirtualBox
+* (Alfred et Bryan :p)
+
+<!--
+_color: black
+-->
+---
+## II - Choix particuliers
+* Script en langage Bash
+* Librairie JQ
+* Installation de l'application Jenkins (avec Apache)
+* Serveur Debian 11
+*  LVM
+
+<!--
+_color: black
+-->
+---
+## III - Nombre de scripts
+Nous avons choisi de réaliser trois scripts et un fichier des clés SSH des administrateurs autorisés. Cela permet de bien définir et d'enchaîner les étapes importantes du brief 3 et de faciliter la lisibilité et la modification des scripts.
+* 1er script : Script principal
+* 2ème script : Installation de Jenkins et partitionnement avec LVM
+* 3ème script : Installation du certificat TLS
+
+<!--
+_color: black
+-->
+--- 
+## IV - Plan projet prévu VS plan projet exécuté 
+> *Nous avions prévu de réaliser le brief 3 dans son entièreté avec les bonus.*
+
+Ce qui manque :
+* comptes nominatifs avec droits administrateur
+* Sauvegarde du disque chiffré
+* Rétention et sauvegarde des logs
+* Application Insights (outil de monitoring)
+
+<!--
+_color: black
+-->
+---
+## V - Compréhension des outils et des logiciels
+
+<!--
+_color: black
+-->
+
+---
+## VI - Difficultés  
+Nous avons rencontré plusieurs difficultés : communes et individuelles.
+
+*Communes* : 
+* Prioriser les différentes étapes du script en fonction de leurs pré-requis
+* Rechercher et analyser de la documentation (anglais/français)
+* Trier les informations, les gérer et les assembler
+* Rendre un script lisible et qualitatif
+* Gérer et organiser le temps de travail
+
+<!--
+_color: black
+-->
+---
+
+*Individuelles* :
+* Dynamique d'équipe (communication)
+* Répartition des tâches
+* Manque de connaissances et de pratique avec Bash et la création de scripts en général
+* Perturbations liées à l'environnement de travail
+
+<!--
+_color: black
+-->
+---
+
+## VII - En cours de développement
+Nous avons commencé partiellement voire presque complètement certains points, mais n'avons pas pu les soumettre dans le script final : 
+* comptes nominatifs avec droits administrateur
+* Sauvegarde du disque chiffré
+* Application Insights
+
+<!--
+_color: black
+-->
+---
