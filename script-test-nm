@@ -5,17 +5,17 @@
 
 # PAS DE MAJUSCULE POUR LES VARIABLES
 NOMVM="debian-gr4"
-NOMGR=$1 # CHANGER LE NOM
+NOMGR="$1" # CHANGER LE NOM
 ADMINUSER="adminuser"
 NOMVNET="vnetgr4"
 NOMBASTION="bastiongr4"
 NOMDISK="diskgr4"
-FQDN=$NOMGR # nom du groupe pour le FQDN ou changer par "le-nom"
+FQDN="$NOMGR" # nom du groupe pour le FQDN ou changer par "le-nom"
 LOCAL="japaneast"
 RSA="@authorized_keys" # "$HOME/.ssh/id_rsa.pub"
 RETVAL=
 
-MENU=$2
+MENU="$2"
 ####################################
 #            M E N U               #
 # 0 Installe tout                  #
@@ -32,12 +32,12 @@ MENU=$2
 
 # Efface les ressources sur azure
 rollback() {
-    desc=$1
+    desc="$1"
     echo "Erreur lié à $desc"
-    if [[ ! -z $ITEMID ]]; then
+    if [ ! -z $ITEMID ]; then
         az backup protection disable --ids $ITEMID --delete-backup-data -y
     fi
-    if [[ ! -z $VAULTID ]]; then
+    if [ ! -z $VAULTID ]; then
         az backup vault delete --resource-group $NOMGR --name myRecoveryServicesVault -y --force
     fi
     az group delete -n $NOMGR -y
@@ -119,7 +119,7 @@ create_connect() {
 create_certbot() {
     echo " Installation du script Certbot :"
     out=$(az vm run-command invoke -g $NOMGR -n $NOMVM --command-id RunShellScript --scripts @install_certbot_apache.sh --parameters $FQDN $LOCAL)
-    echo $out
+    echo "$out"
     echo " Connection à la VM via Bastion"
     az network bastion ssh --target-resource-id $IDVM --auth-type "ssh-key" --username $ADMINUSER --ssh-key "$HOME/.ssh/id_rsa.pub" --name $NOMBASTION --resource-group $NOMGR
 }
@@ -128,41 +128,43 @@ create_certbot() {
 create_backup() {
     echo " Création de la sauvegarde/Backup :"
     az backup vault create --location $LOCAL --name MyRecoveryServicesVault --resource-group $NOMGR
-    VAULTID=$(az backup vault -g $NOMGR | jq -r '.[].id')
-    az resource update --ids ${vaultid}/backupconfig/vaultconfig --set properties.softDeleteFeatureState=disabled
+    SORTIE=$(az backup vault show --name MyRecoveryServicesVault --resource-group $NOMGR)
+    VAULTID=$(az backup vault show --name MyRecoveryServicesVault --resource-group $NOMGR | jq -r '.id')
+    az resource update --ids ${VAULTID}/backupconfig/vaultconfig --set properties.softDeleteFeatureState=disabled
     #az backup protection check-vm -g $NOMGR --vm $NOMVM
     az backup vault backup-properties set --name myRecoveryServicesVault --resource-group $NOMGR --backup-storage-redundancy LocallyRedundant
     az backup protection enable-for-vm --resource-group $NOMGR --vault-name myRecoveryServicesVault --vm $NOMVM --policy-name DefaultPolicy
     ITEMIDS=$(az backup item list -g $NOMGR -v myRecoveryServicesVault | jq -r '.[0].id')
+    az backup protection backup-now --ids $ITEMIDS --retain-until 15-08-2022
 }
 
-if [[ $MENU -lt 1 ]]; then
+if [ $MENU -lt 1 ]; then
     cmd "az group create --location $LOCAL --name $NOMGR" "création de groupe"
     echo "Création du ressource groupe: $NOMGR"
 fi
-if [[ $MENU -lt 2 ]]; then
+if [ $MENU -lt 2 ]; then
     create_network
 fi
-if [[ $MENU -lt 3 ]]; then
+if [ $MENU -lt 3 ]; then
     create_bastion
 fi
-if [[ $MENU -lt 4 ]]; then
+if [ $MENU -lt 4 ]; then
     create_vm
 fi
-if [[ $MENU -lt 5 ]]; then
+if [ $MENU -lt 5 ]; then
     create_disk
 fi
-if [[ $MENU -lt 6 ]]; then
-    create_certbot
-fi
-if [[ $MENU -lt 7 ]]; then
+if [ $MENU -lt 6 ]; then
     create_connect
 fi
-if [[ $MENU -lt 8 ]]; then
+if [ $MENU -lt 7 ]; then
+    create_certbot
+fi
+if [ $MENU -lt 8 ]; then
     create_backup
 fi
 
-if [[ $MENU -eq 9 ]]; then
+if [ $MENU -eq 9 ]; then
     rollback "l'utilisateur du script"
 fi
 
